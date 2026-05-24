@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FDM 3D打印机售后工单系统</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#ffffff;--bg2:#f5f5f5;--bg3:#efefef;
+    --text:#1a1a1a;--text2:#666;--text3:#999;
+    --border:#e0e0e0;--border2:#ccc;
+    --radius:8px;--radius-lg:12px;
+    --shadow:0 2px 12px rgba(0,0,0,.08);
+  }
+  @media(prefers-color-scheme:dark){
+    :root{
+      --bg:#1e1e1e;--bg2:#2a2a2a;--bg3:#333;
+      --text:#f0f0f0;--text2:#aaa;--text3:#666;
+      --border:#3a3a3a;--border2:#555;
+    }
+  }
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg3);color:var(--text);min-height:100vh;font-size:14px}
+  .app{max-width:1100px;margin:0 auto;padding:16px}
+  .top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+  .top-bar h1{font-size:18px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .top-bar h1 i{font-size:20px;color:#666}
+  .btn-primary{background:#1a1a1a;color:#fff;border:none;border-radius:var(--radius);padding:8px 16px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px}
+  @media(prefers-color-scheme:dark){.btn-primary{background:#f0f0f0;color:#1a1a1a}}
+  .btn-primary:hover{opacity:.85}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+  @media(max-width:500px){.stats{grid-template-columns:repeat(2,1fr)}}
+  .stat{background:var(--bg);border-radius:var(--radius-lg);padding:14px 16px;border:1px solid var(--border)}
+  .stat .val{font-size:24px;font-weight:600}
+  .stat .lbl{font-size:12px;color:var(--text2);margin-top:2px}
+  .cat-tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+  .cat-tab{padding:6px 14px;border-radius:99px;font-size:12px;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text2);font-weight:500;display:flex;align-items:center;gap:4px;transition:all .15s}
+  .cat-tab.active-all{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+  @media(prefers-color-scheme:dark){.cat-tab.active-all{background:#f0f0f0;color:#1a1a1a;border-color:#f0f0f0}}
+  .cat-tab.active-hw{background:#FAECE7;color:#993C1D;border-color:#F5C4B3}
+  .cat-tab.active-sw{background:#E6F1FB;color:#185FA5;border-color:#B5D4F4}
+  .cat-tab.active-sl{background:#EAF3DE;color:#3B6D11;border-color:#C0DD97}
+  .cat-tab.active-pr{background:#FAEEDA;color:#854F0B;border-color:#FAC775}
+  .toolbar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .toolbar input,.toolbar select{font-size:13px;padding:8px 12px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg);color:var(--text);outline:none}
+  .toolbar input{flex:1;min-width:180px}
+  .toolbar input:focus,.toolbar select:focus{border-color:var(--border2)}
+  .card{background:var(--bg);border-radius:var(--radius-lg);border:1px solid var(--border);overflow:hidden}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead{background:var(--bg2)}
+  th{padding:10px 12px;text-align:left;font-weight:500;color:var(--text2);font-size:12px;border-bottom:1px solid var(--border)}
+  td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;max-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:var(--bg2)}
+  @media(max-width:768px){
+    .hide-mobile{display:none}
+    td,th{padding:8px}
+  }
+  .badge{display:inline-block;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:500}
+  .b-待处理{background:#E6F1FB;color:#0C447C}
+  .b-处理中{background:#FAEEDA;color:#633806}
+  .b-已解决{background:#EAF3DE;color:#27500A}
+  .b-已关闭{background:#F1EFE8;color:#5F5E5A}
+  .b-已升级{background:#FCEBEB;color:#791F1F}
+  .cat-badge{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:99px;font-size:11px;font-weight:500}
+  .c-硬件{background:#FAECE7;color:#993C1D}
+  .c-软件{background:#E6F1FB;color:#185FA5}
+  .c-切片{background:#EAF3DE;color:#3B6D11}
+  .c-工艺{background:#FAEEDA;color:#854F0B}
+  .pri-高{color:#A32D2D;font-weight:600}
+  .pri-中{color:#854F0B}
+  .pri-低{color:#3B6D11}
+  .act-btn{background:none;border:none;cursor:pointer;color:var(--text2);font-size:16px;padding:3px 5px;border-radius:6px}
+  .act-btn:hover{background:var(--bg3);color:var(--text)}
+  .empty{text-align:center;padding:3rem;color:var(--text3)}
+  .empty i{font-size:32px;display:block;margin-bottom:8px}
+
+  /* Modal */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:16px}
+  .modal-overlay.open{display:flex}
+  .modal{background:var(--bg);border-radius:var(--radius-lg);padding:24px;width:520px;max-width:100%;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow)}
+  .modal h2{font-size:16px;font-weight:600;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
+  .modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2);line-height:1}
+  .modal-close:hover{color:var(--text)}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12px;color:var(--text2);margin-bottom:5px;font-weight:500}
+  .field input,.field select,.field textarea{width:100%;font-size:13px;padding:9px 12px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg);color:var(--text);outline:none;resize:vertical}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--border2)}
+  .field textarea{min-height:72px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:480px){.row2{grid-template-columns:1fr}}
+  .quick-hints{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+  .qhint{font-size:11px;padding:3px 9px;border-radius:99px;cursor:pointer;border:1px solid var(--border);color:var(--text2);background:var(--bg2)}
+  .qhint:hover{border-color:var(--border2);color:var(--text)}
+  .modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+  .btn-cancel{background:none;border:1px solid var(--border);color:var(--text2);border-radius:var(--radius);padding:8px 18px;font-size:13px;cursor:pointer}
+  .btn-cancel:hover{background:var(--bg2)}
+  .btn-save{background:#1a1a1a;color:#fff;border:none;border-radius:var(--radius);padding:8px 18px;font-size:13px;cursor:pointer;font-weight:500}
+  @media(prefers-color-scheme:dark){.btn-save{background:#f0f0f0;color:#1a1a1a}}
+  .btn-save:hover{opacity:.85}
+
+  /* Detail */
+  .detail-modal{width:580px}
+  .section-title{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.5px}
+  .detail-sec{margin-bottom:18px}
+  .drow{display:flex;gap:8px;font-size:13px;margin-bottom:7px;align-items:baseline}
+  .dk{color:var(--text2);min-width:82px;flex-shrink:0;font-size:12px}
+  .dv{color:var(--text);word-break:break-word}
+  .timeline{}
+  .tl-item{display:flex;gap:10px;margin-bottom:10px}
+  .tl-dot{width:8px;height:8px;border-radius:50%;background:var(--border2);flex-shrink:0;margin-top:4px}
+  .tl-dot.latest{background:#378ADD}
+  .tl-txt{font-size:12px;color:var(--text2)}
+  .status-btns{display:flex;gap:6px;flex-wrap:wrap}
+  .status-btns button{background:none;border:1px solid var(--border);border-radius:99px;padding:5px 12px;cursor:pointer;font-size:12px}
+  .status-btns button:hover,.status-btns button.cur{border-color:var(--border2);background:var(--bg2)}
+  .log-row{display:flex;gap:8px;margin-top:10px}
+  .log-row input{flex:1;font-size:12px;padding:7px 10px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg);color:var(--text);outline:none}
+  .log-row input:focus{border-color:var(--border2)}
+  .log-row button{font-size:12px;padding:7px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;color:var(--text)}
+  .log-row button:hover{background:var(--bg3)}
+
+  /* Photo upload */
+  .photo-upload-area{border:2px dashed var(--border2);border-radius:var(--radius);padding:12px;text-align:center;cursor:pointer;color:var(--text3);font-size:12px;transition:all .15s;position:relative}
+  .photo-upload-area:hover{border-color:#888;color:var(--text2)}
+  .photo-upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+  .photo-preview{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .photo-thumb{position:relative;width:64px;height:64px;border-radius:6px;overflow:hidden;border:1px solid var(--border)}
+  .photo-thumb img{width:100%;height:100%;object-fit:cover}
+  .photo-thumb .del-photo{position:absolute;top:1px;right:1px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;width:16px;height:16px;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+  .photo-thumb .del-photo:hover{background:rgba(200,0,0,.8)}
+  .detail-photos{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+  .detail-photos img{width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer}
+  .lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;align-items:center;justify-content:center}
+  .lightbox.open{display:flex}
+  .lightbox img{max-width:90vw;max-height:90vh;border-radius:8px}
+  .lightbox-close{position:absolute;top:16px;right:20px;background:none;border:none;color:#fff;font-size:28px;cursor:pointer;line-height:1}
+
+  /* Export btn */
+  .btn-export{background:none;border:1px solid var(--border);color:var(--text2);border-radius:var(--radius);padding:8px 14px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px}
+  .btn-export:hover{background:var(--bg2);color:var(--text)}
+
+  /* Email parse */
+  .btn-email{background:none;border:1px solid var(--border);color:var(--text2);border-radius:var(--radius);padding:8px 14px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px}
+  .btn-email:hover{background:var(--bg2);color:var(--text)}
+  .parse-result{background:var(--bg2);border-radius:var(--radius);padding:14px;margin-top:14px;border:1px solid var(--border);font-size:13px}
+  .parse-result .pr-row{display:flex;gap:8px;margin-bottom:7px;align-items:baseline}
+  .parse-result .pr-k{color:var(--text2);min-width:72px;font-size:12px;flex-shrink:0}
+  .parse-result .pr-v{color:var(--text);word-break:break-word}
+  .parse-loading{display:flex;align-items:center;gap:10px;color:var(--text2);font-size:13px;padding:16px 0}
+  .spin{width:18px;height:18px;border:2px solid var(--border2);border-top-color:var(--text);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .parse-actions{display:flex;gap:8px;margin-top:14px;justify-content:flex-end}
+  .ai-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:99px;background:#EAF3DE;color:#3B6D11;margin-left:8px;font-weight:500}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top-bar">
+    <h1><i class="ti ti-printer"></i>FDM 3D打印机售后工单系统</h1>
+    <div style="display:flex;gap:8px">
+      <button class="btn-export" onclick="exportCSV()"><i class="ti ti-download"></i>导出数据</button>
+      <button class="btn-email" onclick="openEmailModal()"><i class="ti ti-mail"></i>邮件解析</button>
+      <button class="btn-primary" onclick="openAdd()"><i class="ti ti-plus"></i>新建工单</button>
+    </div>
+  </div>
+  <div class="stats" id="stats"></div>
+  <div class="cat-tabs" id="catTabs"></div>
+  <div class="toolbar">
+    <input type="text" id="search" placeholder="搜索客户、工单号、描述…" oninput="render()">
+    <select id="filterStatus" onchange="render()">
+      <option value="">全部状态</option>
+      <option>待处理</option><option>处理中</option><option>已解决</option><option>已关闭</option><option>已升级</option>
+    </select>
+    <select id="filterPri" onchange="render()">
+      <option value="">全部优先级</option>
+      <option>高</option><option>中</option><option>低</option>
+    </select>
+  </div>
+  <div class="card">
+    <div style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:88px">工单号</th>
+          <th style="width:72px">客户</th>
+          <th>问题描述</th>
+          <th style="width:66px">分类</th>
+          <th class="hide-mobile" style="width:90px">子类型</th>
+          <th style="width:50px">优先</th>
+          <th style="width:74px">状态</th>
+          <th class="hide-mobile" style="width:70px">负责人</th>
+          <th class="hide-mobile" style="width:84px">日期</th>
+          <th style="width:56px">操作</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<!-- 新建工单 -->
+<div class="modal-overlay" id="addModal">
+<div class="modal">
+  <h2>新建工单 <button class="modal-close" onclick="closeModal('addModal')"><i class="ti ti-x"></i></button></h2>
+  <div class="row2">
+    <div class="field"><label>客户姓名 *</label><input id="f-name" placeholder="客户姓名"></div>
+    <div class="field"><label>联系方式</label><input id="f-contact" placeholder="手机 / 邮箱"></div>
+  </div>
+  <div class="row2">
+    <div class="field"><label>国家 / 地区</label>
+      <select id="f-country">
+        <option value="">请选择</option>
+        <option>中国</option><option>美国</option><option>德国</option><option>英国</option>
+        <option>法国</option><option>日本</option><option>韩国</option><option>加拿大</option>
+        <option>澳大利亚</option><option>新加坡</option><option>马来西亚</option><option>泰国</option>
+        <option>印度</option><option>巴西</option><option>墨西哥</option><option>俄罗斯</option>
+        <option>其他</option>
+      </select>
+    </div>
+    <div class="field"><label>打印机型号</label><input id="f-model" placeholder="如 Bambu X1C、Ender-3…"></div>
+  </div>
+  <div class="row2">
+    <div class="field"><label>耗材类型</label><input id="f-mat" placeholder="如 PLA、ABS、PETG…"></div>
+    <div class="field" style="visibility:hidden"></div>
+  </div>
+  <div class="row2">
+    <div class="field">
+      <label>问题分类 *</label>
+      <select id="f-cat" onchange="updateSubs()">
+        <option value="">请选择</option>
+        <option>硬件</option><option>软件</option><option>切片</option><option>工艺</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>子类型</label>
+      <select id="f-sub"><option value="">请先选择分类</option></select>
+    </div>
+  </div>
+  <div class="field">
+    <label>常见问题快选（点击填入描述）</label>
+    <div class="quick-hints" id="qhints"></div>
+  </div>
+  <div class="field"><label>问题描述 *</label><textarea id="f-desc" placeholder="详细描述客户反映的问题…"></textarea></div>
+  <div class="field">
+    <label>上传照片（可多张）</label>
+    <div class="photo-upload-area" id="uploadArea">
+      <i class="ti ti-photo-plus" style="font-size:20px;display:block;margin-bottom:4px"></i>点击或拖拽上传照片
+      <input type="file" id="f-photos" accept="image/*" multiple onchange="handlePhotos(this)">
+    </div>
+    <div class="photo-preview" id="photoPreview"></div>
+  </div>
+  <div class="row2">
+    <div class="field"><label>优先级</label>
+      <select id="f-pri"><option>高</option><option selected>中</option><option>低</option></select>
+    </div>
+    <div class="field"><label>状态</label>
+      <select id="f-status"><option>待处理</option><option>处理中</option><option>已解决</option><option>已关闭</option><option>已升级</option></select>
+    </div>
+  </div>
+  <div class="row2">
+    <div class="field"><label>负责人</label><input id="f-owner" placeholder="分配给谁"></div>
+    <div class="field"><label>根本原因</label><input id="f-cause" placeholder="初步判断原因"></div>
+  </div>
+  <div class="field"><label>解决方案 / 备注</label><textarea id="f-note" placeholder="处理方案或其他补充…" style="min-height:52px"></textarea></div>
+  <div class="modal-footer">
+    <button class="btn-cancel" onclick="closeModal('addModal')">取消</button>
+    <button class="btn-save" onclick="saveTicket()">保存工单</button>
+  </div>
+</div></div>
+
+<!-- 详情 -->
+<div class="modal-overlay" id="detailModal">
+<div class="modal detail-modal" id="detailContent"></div>
+</div>
+
+<!-- 邮件解析 -->
+<div class="modal-overlay" id="emailModal">
+<div class="modal" style="width:600px">
+  <h2>
+    <span><i class="ti ti-mail" style="font-size:16px;margin-right:6px"></i>邮件解析 → 自动生成工单 <span class="ai-badge"><i class="ti ti-sparkles" style="font-size:10px"></i>AI</span></span>
+    <button class="modal-close" onclick="closeModal('emailModal')"><i class="ti ti-x"></i></button>
+  </h2>
+  <div class="field">
+    <label>粘贴邮件内容（正文 / 原文均可）</label>
+    <textarea id="email-input" style="min-height:140px;font-size:13px" placeholder="将客户邮件内容粘贴到这里…&#10;&#10;例如：&#10;Subject: My Bambu X1C keeps jamming&#10;From: john@example.com&#10;&#10;Hi, I bought the X1C last week and the nozzle keeps clogging after 10 minutes of printing. I've tried cold pulls but it doesn't help. Using PLA+ filament. Please help!"></textarea>
+  </div>
+  <div id="parseArea"></div>
+  <div class="modal-footer" style="margin-top:12px">
+    <button class="btn-cancel" onclick="closeModal('emailModal')">取消</button>
+    <button class="btn-save" id="parseBtn" onclick="parseEmail()"><i class="ti ti-sparkles" style="font-size:13px"></i> AI 解析</button>
+  </div>
+</div>
+</div>
+
+<!-- 灯箱 -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">×</button>
+  <img id="lightboxImg" src="" alt="">
+</div>
+
+<script>
+const STORAGE_KEY='fdm_tickets_v1';
+const COUNTER_KEY='fdm_counter_v1';
+
+const SUB={
+  硬件:['喷嘴堵塞','热床问题','挤出机故障','步进电机异响','限位开关失效','加热块漏料','风扇不转','主板故障','断料检测失效','Z轴偏移'],
+  软件:['固件升级失败','WiFi/网络异常','触摸屏无响应','上位机软件崩溃','远程监控失效','文件传输失败','账号/激活问题','云端切片错误'],
+  切片:['支撑设置不当','层高/壁厚参数错误','填充密度问题','切片文件损坏','多色/多材料支持','首层设置问题','切片速度配置','Gcode兼容性'],
+  工艺:['翘边/脱层','拉丝严重','欠挤出/过挤出','层间开裂','表面粗糙','打印尺寸偏差','支撑难以去除','耗材受潮','色差/烧焦','首层不粘床']
+};
+const QUICK={
+  硬件:['喷嘴堵塞，完全无法出料','热床加热后自动断电','打印头撞床（归零错误）','步进电机丢步，尺寸偏差大'],
+  软件:['固件升级后机器无法开机','WiFi反复掉线，无法连接','切片软件找不到打印机','触摸屏触控完全失灵'],
+  切片:['切片后首层严重不粘床','支撑太难移除，伤到模型','切片预览正常但实物缺料','壁厚不够，模型透光'],
+  工艺:['PLA翘边，四角翘起','打印完成后拉丝严重','层间开裂，强度极差','PETG过挤，表面起泡']
+};
+const CAT_ICON={硬件:'ti-cpu',软件:'ti-code',切片:'ti-layers-difference',工艺:'ti-adjustments'};
+
+function loadTickets(){
+  try{const d=localStorage.getItem(STORAGE_KEY);return d?JSON.parse(d):defaultTickets();}catch(e){return defaultTickets();}
+}
+function saveTickets(){localStorage.setItem(STORAGE_KEY,JSON.stringify(tickets));}
+function loadCounter(){return parseInt(localStorage.getItem(COUNTER_KEY)||'6');}
+function saveCounter(){localStorage.setItem(COUNTER_KEY,String(counter));}
+
+function defaultTickets(){
+  return[
+    {id:'TK-0001',name:'李明',contact:'138-0000-1234',model:'Bambu X1C',mat:'PLA',cat:'硬件',sub:'喷嘴堵塞',desc:'打印到一半出料异常，喷嘴完全堵死，清除操作无效',pri:'高',status:'处理中',owner:'张伟',date:'2026-05-15',cause:'耗材受潮结块',note:'建议更换喷嘴，提供视频教程',log:['2026-05-15 客户来电反馈','2026-05-16 远程诊断：确认喷嘴堵死','2026-05-18 邮寄备用喷嘴']},
+    {id:'TK-0002',name:'王芳',contact:'wf@mail.com',model:'Ender-3 V3',mat:'PETG',cat:'工艺',sub:'翘边/脱层',desc:'打印大平面模型时四角严重翘边，已试过涂胶棒无效',pri:'中',status:'待处理',owner:'陈红',date:'2026-05-17',cause:'热床温度不均匀',note:'',log:['2026-05-17 工单创建']},
+    {id:'TK-0003',name:'赵磊',contact:'133-2222-9999',model:'Prusa MK4',mat:'ABS',cat:'软件',sub:'固件升级失败',desc:'升级固件后机器卡在启动界面，无法正常进入系统',pri:'高',status:'已升级',owner:'刘洋',date:'2026-05-12',cause:'固件包下载损坏',note:'已上报研发，等待补丁',log:['2026-05-12 客户反馈','2026-05-13 确认固件损坏','2026-05-15 上报研发']},
+    {id:'TK-0004',name:'孙雪',contact:'150-3333-0001',model:'Bambu P1S',mat:'TPU',cat:'切片',sub:'支撑设置不当',desc:'自动支撑把模型内部孔洞全填满，支撑无法去除',pri:'中',status:'已解决',owner:'吴敏',date:'2026-05-14',cause:'支撑阈值角度过低',note:'调整支撑临界角度至45°后解决',log:['2026-05-14 咨询工单','2026-05-14 远程调整参数','2026-05-15 客户确认解决']},
+    {id:'TK-0005',name:'周晓',contact:'138-5555-8888',model:'Creality K1',mat:'PLA+',cat:'工艺',sub:'拉丝严重',desc:'打印空心模型横跨区域大量拉丝，已降温仍有问题',pri:'低',status:'已关闭',owner:'张伟',date:'2026-05-08',cause:'回抽距离不足',note:'增大回抽至6mm，关闭Z-Lift后解决',log:['2026-05-08 工单创建','2026-05-09 参数调优','2026-05-10 客户确认','2026-05-10 工单关闭']},
+  ];
+}
+
+let tickets=loadTickets();
+let counter=loadCounter();
+let activeCat='';
+let pendingPhotos=[]; // base64 strings for current new ticket
+
+function today(){return new Date().toISOString().slice(0,10);}
+function pad(n){return String(n).padStart(4,'0');}
+
+function handlePhotos(input){
+  const files=Array.from(input.files);
+  files.forEach(f=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      pendingPhotos.push(e.target.result);
+      renderPhotoPreview();
+    };
+    r.readAsDataURL(f);
+  });
+  input.value='';
+}
+
+function renderPhotoPreview(){
+  const el=document.getElementById('photoPreview');
+  el.innerHTML=pendingPhotos.map((src,i)=>`
+    <div class="photo-thumb">
+      <img src="${src}" alt="photo${i}">
+      <button class="del-photo" onclick="removePhoto(${i})">×</button>
+    </div>
+  `).join('');
+}
+
+function removePhoto(i){
+  pendingPhotos.splice(i,1);
+  renderPhotoPreview();
+}
+
+function openLightbox(src){
+  document.getElementById('lightboxImg').src=src;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox(){
+  document.getElementById('lightbox').classList.remove('open');
+}
+
+function badgeHtml(s){return`<span class="badge b-${s}">${s}</span>`;}
+function priHtml(p){return`<span class="pri-${p}">${p}</span>`;}
+function catHtml(c){
+  if(!c)return'—';
+  return`<span class="cat-badge c-${c}"><i class="ti ${CAT_ICON[c]||''}" style="font-size:11px"></i>${c}</span>`;
+}
+
+function renderStats(){
+  document.getElementById('stats').innerHTML=`
+    <div class="stat"><div class="val">${tickets.length}</div><div class="lbl">全部工单</div></div>
+    <div class="stat"><div class="val">${tickets.filter(t=>t.status==='待处理').length}</div><div class="lbl">待处理</div></div>
+    <div class="stat"><div class="val">${tickets.filter(t=>t.status==='处理中'||t.status==='已升级').length}</div><div class="lbl">进行中</div></div>
+    <div class="stat"><div class="val">${tickets.filter(t=>t.status==='已解决'||t.status==='已关闭').length}</div><div class="lbl">已完结</div></div>
+  `;
+}
+
+function renderCatTabs(){
+  const cats=[{k:'',l:'全部',icon:'ti-layout-grid'},{k:'硬件',l:'硬件',icon:'ti-cpu'},{k:'软件',l:'软件',icon:'ti-code'},{k:'切片',l:'切片',icon:'ti-layers-difference'},{k:'工艺',l:'工艺',icon:'ti-adjustments'}];
+  const activeMap={'':'active-all',硬件:'active-hw',软件:'active-sw',切片:'active-sl',工艺:'active-pr'};
+  document.getElementById('catTabs').innerHTML=cats.map(c=>`
+    <div class="cat-tab ${activeCat===c.k?activeMap[c.k]:''}" onclick="setCat('${c.k}')">
+      <i class="ti ${c.icon}" style="font-size:12px"></i>${c.l}
+      <span style="opacity:.6;font-size:11px">(${c.k?tickets.filter(t=>t.cat===c.k).length:tickets.length})</span>
+    </div>
+  `).join('');
+}
+
+function setCat(c){activeCat=c;render();}
+
+function render(){
+  renderStats();renderCatTabs();
+  const q=document.getElementById('search').value.toLowerCase();
+  const fs=document.getElementById('filterStatus').value;
+  const fp=document.getElementById('filterPri').value;
+  let list=tickets.filter(t=>{
+    return(!activeCat||t.cat===activeCat)&&
+      (!q||(t.id+t.name+t.desc+(t.sub||'')).toLowerCase().includes(q))&&
+      (!fs||t.status===fs)&&(!fp||t.pri===fp);
+  });
+  const tb=document.getElementById('tbody');
+  if(!list.length){
+    tb.innerHTML=`<tr><td colspan="10"><div class="empty"><i class="ti ti-inbox-off"></i>暂无匹配工单</div></td></tr>`;
+    return;
+  }
+  tb.innerHTML=list.map(t=>`
+    <tr>
+      <td style="color:var(--text2);font-size:12px">${t.id}</td>
+      <td style="font-weight:600">${t.name}</td>
+      <td title="${t.desc}">${t.desc}</td>
+      <td>${catHtml(t.cat)}</td>
+      <td class="hide-mobile" style="color:var(--text2);font-size:12px" title="${t.sub||''}">${t.sub||'—'}</td>
+      <td>${priHtml(t.pri)}</td>
+      <td>${badgeHtml(t.status)}</td>
+      <td class="hide-mobile">${t.owner||'—'}</td>
+      <td class="hide-mobile" style="color:var(--text2);font-size:12px">${t.date}</td>
+      <td>
+        <button class="act-btn" title="查看详情" onclick="openDetail('${t.id}')"><i class="ti ti-eye"></i></button>
+        <button class="act-btn" title="删除" onclick="delTicket('${t.id}')"><i class="ti ti-trash"></i></button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function updateSubs(){
+  const cat=document.getElementById('f-cat').value;
+  const sel=document.getElementById('f-sub');
+  const hints=document.getElementById('qhints');
+  sel.innerHTML='<option value="">请选择子类型</option>';
+  hints.innerHTML='';
+  if(!cat)return;
+  (SUB[cat]||[]).forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
+  (QUICK[cat]||[]).forEach(q=>{
+    const b=document.createElement('span');b.className='qhint';b.textContent=q;
+    b.onclick=()=>document.getElementById('f-desc').value=q;
+    hints.appendChild(b);
+  });
+}
+
+function openAdd(){document.getElementById('addModal').classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+function saveTicket(){
+  const name=document.getElementById('f-name').value.trim();
+  const desc=document.getElementById('f-desc').value.trim();
+  const cat=document.getElementById('f-cat').value;
+  if(!name||!desc||!cat){alert('请填写客户姓名、问题分类和问题描述');return;}
+  const t={
+    id:'TK-'+pad(counter++),name,
+    contact:document.getElementById('f-contact').value.trim(),
+    country:document.getElementById('f-country').value,
+    model:document.getElementById('f-model').value.trim(),
+    mat:document.getElementById('f-mat').value.trim(),
+    cat,sub:document.getElementById('f-sub').value,desc,
+    pri:document.getElementById('f-pri').value,
+    status:document.getElementById('f-status').value,
+    owner:document.getElementById('f-owner').value.trim(),
+    date:today(),
+    cause:document.getElementById('f-cause').value.trim(),
+    note:document.getElementById('f-note').value.trim(),
+    photos:[...pendingPhotos],
+    log:[today()+' 工单创建']
+  };
+  tickets.unshift(t);
+  saveTickets();saveCounter();
+  closeModal('addModal');
+  ['f-name','f-contact','f-model','f-mat','f-desc','f-owner','f-cause','f-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-cat').value='';
+  document.getElementById('f-country').value='';
+  document.getElementById('f-sub').innerHTML='<option value="">请先选择分类</option>';
+  document.getElementById('qhints').innerHTML='';
+  pendingPhotos=[];
+  document.getElementById('photoPreview').innerHTML='';
+  render();
+}
+
+function delTicket(id){
+  if(!confirm('确认删除此工单？'))return;
+  tickets=tickets.filter(t=>t.id!==id);
+  saveTickets();render();
+}
+
+function openDetail(id){
+  const t=tickets.find(x=>x.id===id);if(!t)return;
+  const el=document.getElementById('detailContent');
+  el.innerHTML=`
+    <h2>
+      <span>${t.id} &nbsp;${catHtml(t.cat)}</span>
+      <button class="modal-close" onclick="closeModal('detailModal')"><i class="ti ti-x"></i></button>
+    </h2>
+    <div class="detail-sec">
+      <div class="section-title">设备 & 客户信息</div>
+      <div class="drow"><span class="dk">客户姓名</span><span class="dv">${t.name}</span></div>
+      <div class="drow"><span class="dk">联系方式</span><span class="dv">${t.contact||'—'}</span></div>
+      <div class="drow"><span class="dk">国家/地区</span><span class="dv">${t.country||'—'}</span></div>
+      <div class="drow"><span class="dk">打印机型号</span><span class="dv">${t.model||'—'}</span></div>
+      <div class="drow"><span class="dk">耗材类型</span><span class="dv">${t.mat||'—'}</span></div>
+      <div class="drow"><span class="dk">负责人</span><span class="dv">${t.owner||'—'}</span></div>
+      <div class="drow"><span class="dk">创建日期</span><span class="dv">${t.date}</span></div>
+    </div>
+    <div class="detail-sec">
+      <div class="section-title">问题详情</div>
+      <div class="drow"><span class="dk">分类</span><span class="dv">${catHtml(t.cat)}</span></div>
+      <div class="drow"><span class="dk">子类型</span><span class="dv">${t.sub||'—'}</span></div>
+      <div class="drow"><span class="dk">优先级</span><span class="dv">${priHtml(t.pri)}</span></div>
+      <div class="drow"><span class="dk">当前状态</span><span class="dv">${badgeHtml(t.status)}</span></div>
+      <div class="drow"><span class="dk">问题描述</span><span class="dv" style="white-space:pre-wrap">${t.desc}</span></div>
+      <div class="drow"><span class="dk">根本原因</span><span class="dv">${t.cause||'—'}</span></div>
+      <div class="drow"><span class="dk">解决方案</span><span class="dv" style="white-space:pre-wrap">${t.note||'—'}</span></div>
+      ${(t.photos&&t.photos.length)?`<div class="drow"><span class="dk">照片</span><span class="dv"><div class="detail-photos">${t.photos.map((src,i)=>`<img src="${src}" alt="photo${i}" onclick="openLightbox('${src}')">`).join('')}</div></span></div>`:''}
+    </div>
+    <div class="detail-sec">
+      <div class="section-title">处理进展</div>
+      <div class="timeline">${(t.log||[]).map((l,i,a)=>`
+        <div class="tl-item">
+          <div class="tl-dot ${i===a.length-1?'latest':''}"></div>
+          <div class="tl-txt">${l}</div>
+        </div>`).join('')}
+      </div>
+      <div class="log-row">
+        <input id="log-inp" type="text" placeholder="添加进展记录…">
+        <button onclick="addLog('${t.id}')">添加</button>
+      </div>
+    </div>
+    <div class="detail-sec">
+      <div class="section-title">更新状态</div>
+      <div class="status-btns">
+        ${['待处理','处理中','已解决','已关闭','已升级'].map(s=>`
+          <button class="${t.status===s?'cur':''}" onclick="updateStatus('${t.id}','${s}')">${badgeHtml(s)}</button>
+        `).join('')}
+      </div>
+    </div>
+  `;
+  document.getElementById('detailModal').classList.add('open');
+}
+
+function addLog(id){
+  const inp=document.getElementById('log-inp');
+  const v=inp.value.trim();if(!v)return;
+  const t=tickets.find(x=>x.id===id);
+  t.log.push(today()+' '+v);inp.value='';
+  saveTickets();openDetail(id);
+}
+
+function updateStatus(id,s){
+  const t=tickets.find(x=>x.id===id);
+  t.status=s;t.log.push(today()+' 状态更新为：'+s);
+  saveTickets();render();openDetail(id);
+}
+
+document.getElementById('addModal').addEventListener('click',e=>{if(e.target.id==='addModal')closeModal('addModal');});
+document.getElementById('detailModal').addEventListener('click',e=>{if(e.target.id==='detailModal')closeModal('detailModal');});
+
+function openEmailModal(){
+  document.getElementById('email-input').value='';
+  document.getElementById('parseArea').innerHTML='';
+  document.getElementById('parseBtn').innerHTML='<i class="ti ti-sparkles" style="font-size:13px"></i> AI 解析';
+  document.getElementById('parseBtn').disabled=false;
+  document.getElementById('emailModal').classList.add('open');
+}
+
+let parsedTicketData=null;
+
+async function parseEmail(){
+  const emailText=document.getElementById('email-input').value.trim();
+  if(!emailText){alert('请先粘贴邮件内容');return;}
+
+  const btn=document.getElementById('parseBtn');
+  btn.disabled=true;
+  btn.innerHTML='解析中…';
+
+  document.getElementById('parseArea').innerHTML=`
+    <div class="parse-loading">
+      <div class="spin"></div>
+      <span>AI 正在识别邮件内容，提取工单信息…</span>
+    </div>`;
+
+  const prompt=`你是一个 FDM 3D打印机售后工单系统的 AI 助手。请从以下邮件内容中提取工单信息，并严格以 JSON 格式返回，不要包含任何其他文字。
+
+邮件内容：
+${emailText}
+
+请提取以下字段并返回 JSON：
+{
+  "name": "客户姓名（从署名或发件人提取，无法判断填"未知客户"）",
+  "contact": "联系方式（邮箱地址或电话，没有填空字符串）",
+  "country": "国家或地区（从邮件信息推断，无法判断填空字符串）",
+  "model": "打印机型号（如 Bambu X1C、Ender-3 等，无法判断填空字符串）",
+  "mat": "耗材类型（如 PLA、ABS、PETG 等，无法判断填空字符串）",
+  "cat": "问题分类，只能是以下之一：硬件、软件、切片、工艺",
+  "sub": "子类型（从以下选项选择最匹配的，没有合适的填空字符串）：硬件:[喷嘴堵塞,热床问题,挤出机故障,步进电机异响,限位开关失效,加热块漏料,风扇不转,主板故障,断料检测失效,Z轴偏移] 软件:[固件升级失败,WiFi/网络异常,触摸屏无响应,上位机软件崩溃,远程监控失效,文件传输失败,账号/激活问题,云端切片错误] 切片:[支撑设置不当,层高/壁厚参数错误,填充密度问题,切片文件损坏,多色/多材料支持,首层设置问题,切片速度配置,Gcode兼容性] 工艺:[翘边/脱层,拉丝严重,欠挤出/过挤出,层间开裂,表面粗糙,打印尺寸偏差,支撑难以去除,耗材受潮,色差/烧焦,首层不粘床]",
+  "desc": "问题描述（用中文简洁描述核心问题，50字以内）",
+  "pri": "优先级，只能是：高、中、低（根据问题紧急程度判断）",
+  "cause": "初步判断根本原因（简短，无法判断填空字符串）",
+  "note": "建议处理方案（简短，无法判断填空字符串）"
+}`;
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data=await resp.json();
+    const raw=data.content.map(i=>i.text||'').join('');
+    const clean=raw.replace(/```json|```/g,'').trim();
+    const parsed=JSON.parse(clean);
+    parsedTicketData=parsed;
+    showParseResult(parsed);
+  }catch(e){
+    document.getElementById('parseArea').innerHTML=`<div style="color:#A32D2D;font-size:13px;padding:10px 0">❌ 解析失败，请检查网络或重试。错误：${e.message}</div>`;
+  }
+  btn.disabled=false;
+  btn.innerHTML='<i class="ti ti-sparkles" style="font-size:13px"></i> 重新解析';
+}
+
+function showParseResult(p){
+  const priColor={'高':'#A32D2D','中':'#854F0B','低':'#3B6D11'};
+  document.getElementById('parseArea').innerHTML=`
+    <div class="parse-result">
+      <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:10px;display:flex;align-items:center;gap:6px">
+        <i class="ti ti-check" style="color:#3B6D11"></i> AI 解析完成，请确认以下信息
+      </div>
+      <div class="pr-row"><span class="pr-k">客户姓名</span><span class="pr-v">${p.name||'—'}</span></div>
+      <div class="pr-row"><span class="pr-k">联系方式</span><span class="pr-v">${p.contact||'—'}</span></div>
+      <div class="pr-row"><span class="pr-k">国家/地区</span><span class="pr-v">${p.country||'—'}</span></div>
+      <div class="pr-row"><span class="pr-k">打印机型号</span><span class="pr-v">${p.model||'—'}</span></div>
+      <div class="pr-row"><span class="pr-k">耗材类型</span><span class="pr-v">${p.mat||'—'}</span></div>
+      <div class="pr-row"><span class="pr-k">问题分类</span><span class="pr-v">${p.cat||'—'} ${p.sub?'· '+p.sub:''}</span></div>
+      <div class="pr-row"><span class="pr-k">优先级</span><span class="pr-v" style="color:${priColor[p.pri]||'inherit'};font-weight:600">${p.pri||'—'}</span></div>
+      <div class="pr-row"><span class="pr-k">问题描述</span><span class="pr-v">${p.desc||'—'}</span></div>
+      ${p.cause?`<div class="pr-row"><span class="pr-k">初步原因</span><span class="pr-v">${p.cause}</span></div>`:''}
+      ${p.note?`<div class="pr-row"><span class="pr-k">处理建议</span><span class="pr-v">${p.note}</span></div>`:''}
+    </div>
+    <div class="parse-actions">
+      <button class="btn-cancel" onclick="editParsed()"><i class="ti ti-edit" style="font-size:12px"></i> 编辑后保存</button>
+      <button class="btn-save" onclick="confirmParsed()"><i class="ti ti-check" style="font-size:12px"></i> 确认创建工单</button>
+    </div>`;
+}
+
+function confirmParsed(){
+  if(!parsedTicketData)return;
+  const p=parsedTicketData;
+  const t={
+    id:'TK-'+pad(counter++),
+    name:p.name||'未知客户',
+    contact:p.contact||'',
+    country:p.country||'',
+    model:p.model||'',
+    mat:p.mat||'',
+    cat:p.cat||'硬件',
+    sub:p.sub||'',
+    desc:p.desc||'',
+    pri:p.pri||'中',
+    status:'待处理',
+    owner:'',
+    date:today(),
+    cause:p.cause||'',
+    note:p.note||'',
+    photos:[],
+    log:[today()+' 工单创建（邮件解析）']
+  };
+  tickets.unshift(t);
+  saveTickets();saveCounter();
+  closeModal('emailModal');
+  render();
+  // 短暂高亮提示
+  setTimeout(()=>{
+    const row=document.querySelector(`tr td:first-child`);
+    if(row)row.closest('tr').style.background='var(--bg2)';
+  },100);
+}
+
+function editParsed(){
+  if(!parsedTicketData)return;
+  const p=parsedTicketData;
+  closeModal('emailModal');
+  // 填入新建工单表单
+  openAdd();
+  setTimeout(()=>{
+    document.getElementById('f-name').value=p.name||'';
+    document.getElementById('f-contact').value=p.contact||'';
+    document.getElementById('f-country').value=p.country||'';
+    document.getElementById('f-model').value=p.model||'';
+    document.getElementById('f-mat').value=p.mat||'';
+    document.getElementById('f-desc').value=p.desc||'';
+    document.getElementById('f-cause').value=p.cause||'';
+    document.getElementById('f-note').value=p.note||'';
+    document.getElementById('f-pri').value=p.pri||'中';
+    if(p.cat){
+      document.getElementById('f-cat').value=p.cat;
+      updateSubs();
+      setTimeout(()=>{if(p.sub)document.getElementById('f-sub').value=p.sub;},50);
+    }
+  },100);
+}
+
+document.getElementById('emailModal').addEventListener('click',e=>{if(e.target.id==='emailModal')closeModal('emailModal');});
+
+function exportCSV(){
+  if(!tickets.length){alert('暂无工单数据');return;}
+  const headers=['工单号','客户姓名','联系方式','国家/地区','打印机型号','耗材类型','问题分类','子类型','优先级','状态','负责人','创建日期','问题描述','根本原因','解决方案','处理记录','照片数量'];
+  const rows=tickets.map(t=>[
+    t.id,t.name,t.contact||'',t.country||'',t.model||'',t.mat||'',
+    t.cat,t.sub||'',t.pri,t.status,t.owner||'',t.date,
+    t.desc,t.cause||'',t.note||'',
+    (t.log||[]).join(' | '),
+    (t.photos||[]).length
+  ].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(','));
+  const bom='\uFEFF';
+  const csv=bom+[headers.join(','),...rows].join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='工单数据_'+today()+'.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+render();
+</script>
+</body>
+</html>
